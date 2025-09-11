@@ -1,14 +1,9 @@
 pipeline {
     agent any
-    
-    options {
-        // Batch changes similar to Azure batch trigger (can use polling or webhook in Jenkins)
-        // No direct batch trigger equivalent here, but you can configure Jenkins triggers separately
-    }
 
     triggers {
-        // Trigger only on main branch changes (you would configure this in Jenkins UI or with SCM polling)
-        pollSCM('H/5 * * * *') // Example polling; adjust as needed
+        // Poll SCM every 5 minutes (adjust as needed)
+        pollSCM('H/5 * * * *')
     }
 
     environment {
@@ -33,7 +28,6 @@ pipeline {
 
         stage('Install Node.js') {
             steps {
-                // Use NodeJS plugin if installed or use nvm or curl for installation
                 sh '''
                   curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                   sudo apt-get install -y nodejs
@@ -71,7 +65,6 @@ pipeline {
 
         stage('Install Java 11') {
             steps {
-                // Install Java 11 using apt (Ubuntu)
                 sh '''
                 sudo apt-get update
                 sudo apt-get install -y openjdk-11-jdk
@@ -104,7 +97,6 @@ pipeline {
 
         stage('Publish PMD Report') {
             steps {
-                // Archive the PMD report as Jenkins artifact
                 archiveArtifacts artifacts: 'pmd-reports/**', fingerprint: true
             }
         }
