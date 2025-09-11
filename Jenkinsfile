@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    def branchName = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    def branchName = env.GIT_BRANCH
                     echo "Checking branch name..."
                     if (branchName != 'main') {
                         error "This pipeline only runs on 'main' branch. Current branch: ${branchName}"
