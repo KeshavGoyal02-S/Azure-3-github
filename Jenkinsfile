@@ -1,8 +1,12 @@
 pipeline {
     agent any
+    
+    options {
+        // No batch option equivalent in Jenkins Declarative Pipeline, configure triggers in Jenkins UI or with SCM polling
+    }
 
     triggers {
-        // Poll SCM every 5 minutes (adjust as needed)
+        // Poll SCM every 5 minutes - adjust as needed
         pollSCM('H/5 * * * *')
     }
 
@@ -18,10 +22,11 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    // Fail build if not on 'main' branch
-                    if (!env.BRANCH_NAME.equals('main')) {
-                        error("This pipeline only runs on 'main' branch. Current branch: ${env.BRANCH_NAME}")
+                    def branchName = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    if (branchName != 'main') {
+                        error("This pipeline only runs on 'main' branch. Current branch: ${branchName}")
                     }
+                    echo "Running on branch: ${branchName}"
                 }
             }
         }
@@ -112,13 +117,13 @@ pipeline {
 
         stage('Deploy Custom Object Without Tests') {
             steps {
-                sh '''
+                sh """
                 sfdx force:mdapi:deploy \\
-                  -u ${SF_USERNAME} \\
+                  -u ${env.SF_USERNAME} \\
                   -d ./toDeploy \\
                   -l NoTestRun \\
                   -w 10
-                '''
+                """
             }
         }
     }
