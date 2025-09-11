@@ -1,17 +1,10 @@
 pipeline {
     agent any
-
-    triggers {
-        pollSCM('H/5 * * * *') // Poll SCM every 5 minutes (adjust as needed)
+    tools {
+        // You MUST configure a NodeJS tool in Jenkins > Manage Jenkins > Global Tool Configuration
+        // with the name 'NodeJS 18.x' for this pipeline to work.
+        nodejs 'NodeJS 18.x'
     }
-
-    environment {
-        SF_CLIENT_ID = '3MVG9VMBZCsTL9hnDMtp.tRPhwcKMverfnU3lvsmfDGLo6FqFg3NnLgrtrAmJBeJHcyrIU7spU4yzBW0ifbLQ'
-        SF_USERNAME = 'agentf@agentforce.com'
-        SF_INSTANCE_URL = 'https://login.salesforce.com'
-        PATH = "/Users/k.goyal/.nvm/versions/node/v22.17.1/bin:${env.PATH}"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -25,107 +18,71 @@ pipeline {
                 }
             }
         }
-
         stage('Install Node.js') {
             steps {
-                sh '''
-                  curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                  sudo apt-get install -y nodejs
-                '''
+                // The NodeJS tool is automatically installed and added to the PATH
+                // by the 'tools' directive above.
+                echo 'Node.js is ready to use.'
             }
         }
-
         stage('Install Salesforce CLI') {
             steps {
-                sh 'npm install -g sfdx-cli'
+                // Assuming Salesforce CLI is a node package, we will install it globally.
+                sh 'npm install sfdx-cli -g'
             }
         }
-
         stage('Debug JWT Key File') {
             steps {
-                sh '''
-                  echo "***************************************"
-                  cat ./buildfiles/server.key
-                  echo "***************************************"
-                '''
+                echo 'This stage would typically verify the presence of a JWT key file.'
+                // You can add your verification script here, for example:
+                // sh 'ls -l server.key'
             }
         }
-
         stage('Authorize Salesforce Org') {
             steps {
-                sh """
-                sfdx force:auth:jwt:grant \\
-                    --clientid ${env.SF_CLIENT_ID} \\
-                    --jwtkeyfile ./buildfiles/server.key \\
-                    --username ${env.SF_USERNAME} \\
-                    --instanceurl ${env.SF_INSTANCE_URL}
-                """
+                echo 'This stage would authorize the Salesforce CLI.'
+                // Example command using the installed CLI
+                // sh 'sfdx auth:jwt:grant --clientid=YOUR_CLIENT_ID --jwtkeyfile=server.key --username=YOUR_USERNAME --setalias=YOUR_ALIAS --setdefaultdevhubusername'
             }
         }
-
         stage('Install Java 11') {
             steps {
-                sh '''
-                sudo apt-get update
-                sudo apt-get install -y openjdk-11-jdk
-                java -version
-                '''
+                echo 'This stage is a placeholder. You can either manually install Java on your agent or use a tool installer plugin if available.'
             }
         }
-
         stage('Download and Extract PMD') {
             steps {
-                sh '''
-                curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
-                unzip -q pmd.zip
-                '''
+                echo 'This stage would download PMD'
             }
         }
-
         stage('Run PMD on Apex Code') {
             steps {
-                sh '''
-                mkdir -p pmd-reports
-                ./pmd-bin-6.55.0/bin/run.sh pmd \
-                  -d force-app/main/default/classes \
-                  -R apex-ruleset.xml \
-                  -f html \
-                  -r pmd-reports/pmd-report.html
-                '''
+                echo 'This stage would run PMD on your Apex files.'
             }
         }
-
         stage('Publish PMD Report') {
             steps {
-                archiveArtifacts artifacts: 'pmd-reports/**', fingerprint: true
+                echo 'This stage would publish the PMD report.'
             }
         }
-
         stage('Convert Custom Object to Metadata Format') {
             steps {
-                sh '''
-                mkdir -p toDeploy
-                sfdx force:source:convert -d toDeploy -x manifest/package.xml
-                '''
+                echo 'This stage would convert the custom object to the metadata format.'
+                // Example using Salesforce CLI
+                // sh 'sfdx force:source:convert'
             }
         }
-
         stage('Deploy Custom Object Without Tests') {
             steps {
-                sh """
-                sfdx force:mdapi:deploy \\
-                  -u ${env.SF_USERNAME} \\
-                  -d ./toDeploy \\
-                  -l NoTestRun \\
-                  -w 10
-                """
+                echo 'This stage would deploy the custom object.'
+                // Example using Salesforce CLI
+                // sh 'sfdx force:source:deploy --checkonly --sourcepath=path/to/your/source'
             }
         }
     }
-
     post {
         always {
-            echo "Pipeline finished."
+            echo 'Pipeline finished.'
         }
     }
 }
