@@ -1,0 +1,100 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+
+jobs:
+- job: Deploy
+  displayName: 'Deploy Custom Object to Salesforce'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+    # --------------------------------------
+    # 1. Install Node.js and Salesforce CLI
+    # --------------------------------------
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+
+    - script: npm install -g sfdx-cli
+      displayName: 'Install Salesforce CLI'
+
+    # --------------------------------------
+    # 2. JWT Authentication to Salesforce
+    # --------------------------------------
+    - bash: |
+        echo "***************************************"
+        cat "./buildfiles/server.key"
+        echo "***************************************"
+      displayName: 'Debug JWT Key File'
+
+    - script: |
+        sfdx force:auth:jwt:grant \
+          --clientid 3MVG9VMBZCsTL9hnDMtp.tRPhwcKMverfnU3lvsmfDGLo6FqFg3NnLgrtrAmJBeJHcyrIU7spU4yzBW0ifbLQ \
+          --jwtkeyfile ./buildfiles/server.key \
+          --username agentf@agentforce.com \
+          --instanceurl https://login.salesforce.com
+      displayName: 'Authorize Salesforce Org'
+
+    # --------------------------------------
+    # 3. PMD Static Code Analysis on Apex
+    # --------------------------------------
+    - task: JavaToolInstaller@0
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'PreInstalled'
+      displayName: 'Install Java 11'
+
+    - script: |
+        curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
+        unzip -q pmd.zip
+      displayName: 'Download and Extract PMD'
+
+    - script: |
+        mkdir -p pmd-reports
+        ./pmd-bin-6.55.0/bin/run.sh pmd \
+          -d force-app/main/default/classes \
+          -R apex-ruleset.xml \
+          -f html \
+          -r pmd-reports/pmd-report.html
+      displayName: 'Run PMD on Apex Code'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'pmd-reports'
+        ArtifactName: 'PMD-Report'
+        publishLocation: 'Container'
+      displayName: 'Publish PMD Report'
+
+    # --------------------------------------
+    # 4. Salesforce Deployment (Custom Objects Only)
+    # --------------------------------------
+    - script: |
+        mkdir -p toDeploy
+        sfdx force:source:convert -d toDeploy -x manifest/package.xml
+      displayName: 'Convert Only Custom Object to Metadata Format'
+
+    - script: |
+        sfdx force:mdapi:deploy \
+          -u agentf@agentforce.com \
+          -d ./toDeploy \
+          -l NoTestRun \
+          -w 10
+      displayName: 'Deploy Custom Object Without Tests'
