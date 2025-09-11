@@ -1,13 +1,8 @@
 pipeline {
     agent any
-    
-    options {
-        // No batch option equivalent in Jenkins Declarative Pipeline, configure triggers in Jenkins UI or with SCM polling
-    }
 
     triggers {
-        // Poll SCM every 5 minutes - adjust as needed
-        pollSCM('H/5 * * * *')
+        pollSCM('H/5 * * * *') // Poll SCM every 5 minutes (adjust as needed)
     }
 
     environment {
@@ -22,11 +17,12 @@ pipeline {
             steps {
                 checkout scm
                 script {
+                    // Get the current branch name via git command
                     def branchName = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    echo "Current branch: ${branchName}"
                     if (branchName != 'main') {
                         error("This pipeline only runs on 'main' branch. Current branch: ${branchName}")
                     }
-                    echo "Running on branch: ${branchName}"
                 }
             }
         }
