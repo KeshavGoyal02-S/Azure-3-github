@@ -59,7 +59,7 @@ pipeline {
                 tool 'JDK 11'
                 sh '''
                     curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
-                    // The fix is here: Added the -o flag to unzip
+                    # The fix is here: Added the -o flag to unzip
                     unzip -o -q pmd.zip
                 '''
                 sh '''
