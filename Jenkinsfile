@@ -64,34 +64,27 @@ pipeline {
                 }
             }
         }
-        stage('Install Java 11') {
+        stage('Run PMD Analysis') {
             steps {
-                echo 'This stage is a placeholder. You can either manually install Java on your agent or use a tool installer plugin if available.'
+                 // Using a Java tool from Jenkins global tool configuration
+                tool 'JDK 11'
+                sh '''
+                    curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
+                    unzip -q pmd.zip
+                '''
+                sh '''
+                    mkdir -p pmd-reports
+                    ./pmd-bin-6.55.0/bin/run.sh pmd \\
+                      -d force-app/main/default/classes \\
+                      -R apex-ruleset.xml \\
+                      -f html \\
+                      -r pmd-reports/pmd-report.html
+                '''
+                // Publish artifacts
+                archiveArtifacts artifacts: 'pmd-reports/**'
             }
         }
-        stage('Download and Extract PMD') {
-            steps {
-                echo 'This stage would download PMD'
-            }
-        }
-        stage('Run PMD on Apex Code') {
-            steps {
-                echo 'This stage would run PMD on your Apex files.'
-            }
-        }
-        stage('Publish PMD Report') {
-            steps {
-                echo 'This stage would publish the PMD report.'
-            }
-        }
-        stage('Convert Custom Object to Metadata Format') {
-            steps {
-                echo 'This stage would convert the custom object to the metadata format.'
-                // Example using Salesforce CLI
-                // sh 'sfdx force:source:convert'
-            }
-        }
-        stage('Deploy Custom Object Without Tests') {
+        stage('Deploy Custom Object') {
             steps {
                 echo 'This stage would deploy the custom object.'
                 sh 'mkdir -p toDeploy'
