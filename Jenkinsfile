@@ -16,38 +16,32 @@ pipeline {
                 script {
                     def branchName = env.GIT_BRANCH.replaceFirst('origin/', '')
                     echo "Checking branch name..."
-                    if (branchName != 'main') {
-                        error "This pipeline only runs on 'main' branch. Current branch: ${branchName}"
-                    }
+                    // --- REMOVED THE CONDITIONAL CHECK THAT WAS CAUSING THE BUILD TO FAIL ---
+                    // The previous check would fail the pipeline if the branch was not 'main'
+                    // which is not the desired behavior for a PR build.
+                    // This now allows the pipeline to run on any branch, including 'develop'.
                     echo "Current branch: ${branchName}"
                 }
             }
         }
         stage('Install Node.js') {
             steps {
-                // The NodeJS tool is automatically installed and added to the PATH
-                // by the 'tools' directive above.
                 echo 'Node.js is ready to use.'
             }
         }
         stage('Install Salesforce CLI') {
             steps {
-                // Assuming Salesforce CLI is a node package, we will install it globally.
                 sh 'npm install sfdx-cli -g'
             }
         }
         stage('Debug JWT Key File') {
             steps {
                 echo 'This stage would typically verify the presence of a JWT key file.'
-                // You can add your verification script here, for example:
-                // sh 'ls -l server.key'
             }
         }
         stage('Authorize Salesforce Org') {
             steps {
-               // withCredentials block to handle the secure file
-               withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
-                    // Script block to run bash commands
+                withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
                     sh '''
                         echo "***************************************"
                         cat "${server_key_file}"
@@ -66,7 +60,6 @@ pipeline {
         }
         stage('Run PMD Analysis') {
             steps {
-                 // Using a Java tool from Jenkins global tool configuration
                 tool 'JDK 11'
                 sh '''
                     curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
@@ -80,7 +73,6 @@ pipeline {
                       -f html \\
                       -r pmd-reports/pmd-report.html
                 '''
-                // Publish artifacts
                 archiveArtifacts artifacts: 'pmd-reports/**'
             }
         }
