@@ -1,9 +1,9 @@
 pipeline {
     agent any
     environment {
-        SF_CONSUMER_KEY = env.SF_CONSUMER_KEY
-        SF_USERNAME = env.SF_USERNAME
-        SF_INSTANCE_URL = env.SF_INSTANCE_URL ?: "https://login.salesforce.com"
+        SF_CONSUMER_KEY = "${env.SF_CONSUMER_KEY}"
+        SF_USERNAME = "${env.SF_USERNAME}"
+        SF_INSTANCE_URL = "${env.SF_INSTANCE_URL ?: 'https://login.salesforce.com'}"
     }
     tools {
         // You MUST configure a NodeJS tool in Jenkins > Manage Jenkins > Global Tool Configuration
