@@ -20,6 +20,8 @@ The `sfdx-project.json` file contains useful configuration information for your 
 Thanks kiki
 Keshav
 Trigger
-New changes in this
 
-ng
+
+new changes
+
+
