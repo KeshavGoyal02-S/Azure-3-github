@@ -19,7 +19,7 @@ The `sfdx-project.json` file contains useful configuration information for your 
 
 Thanks kiki news 
 Keshav
-Trigger
+Trigger hgvjhgv
 
 
 new changes
