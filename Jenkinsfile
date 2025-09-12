@@ -94,8 +94,15 @@ pipeline {
         stage('Deploy Custom Object Without Tests') {
             steps {
                 echo 'This stage would deploy the custom object.'
-                // Example using Salesforce CLI
-                // sh 'sfdx force:source:deploy --checkonly --sourcepath=path/to/your/source'
+                sh 'mkdir -p toDeploy'
+                sh 'sfdx force:source:convert -d toDeploy -x manifest/package.xml'
+                sh '''
+                    sfdx force:mdapi:deploy \\
+                      -u ''' + SF_USERNAME + ''' \\
+                      -d ./toDeploy \\
+                      -l NoTestRun \\
+                      -w 10
+                '''
             }
         }
     }
