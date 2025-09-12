@@ -1,5 +1,10 @@
 pipeline {
     agent any
+     environment {
+        SF_CONSUMER_KEY = env.SF_CONSUMER_KEY
+        SF_USERNAME = env.SF_USERNAME
+        SF_INSTANCE_URL = env.SF_INSTANCE_URL ?: "https://login.salesforce.com"
+    }
     tools {
         // You MUST configure a NodeJS tool in Jenkins > Manage Jenkins > Global Tool Configuration
         // with the name 'NodeJS 18.x' for this pipeline to work.
@@ -40,9 +45,22 @@ pipeline {
         }
         stage('Authorize Salesforce Org') {
             steps {
-                echo 'This stage would authorize the Salesforce CLI.'
-                // Example command using the installed CLI
-                // sh 'sfdx auth:jwt:grant --clientid=YOUR_CLIENT_ID --jwtkeyfile=server.key --username=YOUR_USERNAME --setalias=YOUR_ALIAS --setdefaultdevhubusername'
+               // withCredentials block to handle the secure file
+              withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
+                    // Script block to run bash commands
+                    sh '''
+                        echo "***************************************"
+                        cat "${server_key_file}"
+                        echo "***************************************"
+                    '''
+
+                    sh '''
+                        sfdx force:auth:jwt:grant \\
+                          --clientid ''' + SF_CONSUMER_KEY + ''' \\
+                          --jwtkeyfile ''' + server_key_file + ''' \\
+                          --username ''' + SF_USERNAME + ''' \\
+                          --instanceurl ''' + SF_INSTANCE_URL + '''
+                    '''
             }
         }
         stage('Install Java 11') {
