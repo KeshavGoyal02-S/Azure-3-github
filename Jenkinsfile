@@ -1,6 +1,6 @@
 pipeline {
     agent any
-     environment {
+    environment {
         SF_CONSUMER_KEY = env.SF_CONSUMER_KEY
         SF_USERNAME = env.SF_USERNAME
         SF_INSTANCE_URL = env.SF_INSTANCE_URL ?: "https://login.salesforce.com"
@@ -46,7 +46,7 @@ pipeline {
         stage('Authorize Salesforce Org') {
             steps {
                // withCredentials block to handle the secure file
-              withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
+               withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
                     // Script block to run bash commands
                     sh '''
                         echo "***************************************"
@@ -61,6 +61,7 @@ pipeline {
                           --username ''' + SF_USERNAME + ''' \\
                           --instanceurl ''' + SF_INSTANCE_URL + '''
                     '''
+                }
             }
         }
         stage('Install Java 11') {
