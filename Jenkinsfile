@@ -16,10 +16,6 @@ pipeline {
                 script {
                     def branchName = env.GIT_BRANCH.replaceFirst('origin/', '')
                     echo "Checking branch name..."
-                    // --- REMOVED THE CONDITIONAL CHECK THAT WAS CAUSING THE BUILD TO FAIL ---
-                    // The previous check would fail the pipeline if the branch was not 'main'
-                    // which is not the desired behavior for a PR build.
-                    // This now allows the pipeline to run on any branch, including 'develop'.
                     echo "Current branch: ${branchName}"
                 }
             }
@@ -63,7 +59,8 @@ pipeline {
                 tool 'JDK 11'
                 sh '''
                     curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
-                    unzip -q pmd.zip
+                    # The fix is here: Added the -o flag to unzip
+                    unzip -o -q pmd.zip
                 '''
                 sh '''
                     mkdir -p pmd-reports
