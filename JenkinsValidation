@@ -1,8 +1,6 @@
 pipeline {
     agent any
 
-    // Use a 'secrets' block for more secure credential handling
-    // This is more readable and can be managed globally.
     environment {
         SF_CONSUMER_KEY = "${env.SF_CONSUMER_KEY}"
         SF_USERNAME = "${env.SF_USERNAME}"
@@ -11,17 +9,18 @@ pipeline {
 
     tools {
         nodejs 'NodeJS 18.x'
+        // You MUST configure a NodeJS tool in Jenkins > Manage Jenkins > Global Tool Configuration
+        // with the name 'NodeJS 18.x' for this pipeline to work.
     }
 
     stages {
         stage('Initialize') {
             steps {
                 echo "Starting build validation for PR against branch: ${env.BRANCH_NAME}"
-                // Use the built-in 'npm' tool to install SFDX CLI
-                npm install sfdx-cli --global
+                sh 'npm install sfdx-cli --global'
             }
         }
-
+        
         stage('Authorize Salesforce Org') {
             steps {
                 withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
@@ -41,19 +40,17 @@ pipeline {
             steps {
                 tool 'JDK 11'
                 sh '''
-                    # Download PMD and unzip to a consistent location
                     curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
                     unzip -o -q pmd.zip
                 '''
                 sh '''
-                    # Run analysis, fail the build on any issues
+                    mkdir -p pmd-reports
                     ./pmd-bin-6.55.0/bin/run.sh pmd \\
                       -d force-app \\
                       -R apex-ruleset.xml \\
                       -f html \\
                       -r pmd-reports/pmd-report.html || true
                 '''
-                // Check if the report is not empty; if it's not, fail the build.
                 sh 'test ! -s pmd-reports/pmd-report.html'
                 archiveArtifacts artifacts: 'pmd-reports/**'
             }
@@ -61,7 +58,7 @@ pipeline {
 
         stage('Validate Metadata') {
             steps {
-                echo 'Performing a validation-only deployment and running Apex tests.'
+                echo 'Performing a validation-only deployment to ensure changes can be deployed.'
                 sh 'sfdx force:source:convert --rootdir force-app --outputdir deploy-package'
                 sh '''
                     sfdx force:mdapi:deploy \\
@@ -81,8 +78,6 @@ pipeline {
         }
         failure {
             echo 'Build validation failed. Check the Jenkins logs for details.'
-            // Example of a mail notification on failure
-            // mail(to: 'dev.team@example.com', subject: 'Jenkins Build Failed', body: "The build for your PR has failed. Please check the logs at ${env.BUILD_URL}")
         }
         success {
             echo 'Build validation successful. Merging into the main branch is now safe.'
