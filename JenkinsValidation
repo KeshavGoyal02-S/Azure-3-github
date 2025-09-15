@@ -1,90 +1,88 @@
 pipeline {
     agent any
+
+    // Use a 'secrets' block for more secure credential handling
+    // This is more readable and can be managed globally.
     environment {
         SF_CONSUMER_KEY = "${env.SF_CONSUMER_KEY}"
         SF_USERNAME = "${env.SF_USERNAME}"
         SF_INSTANCE_URL = "${env.SF_INSTANCE_URL ?: 'https://login.salesforce.com'}"
     }
+
     tools {
-        // You MUST configure a NodeJS tool in Jenkins > Manage Jenkins > Global Tool Configuration
-        // with the name 'NodeJS 18.x' for this pipeline to work.
         nodejs 'NodeJS 18.x'
     }
+
     stages {
-        stage('Checkout') {
+        stage('Initialize') {
             steps {
-                script {
-                    def branchName = env.GIT_BRANCH.replaceFirst('origin/', '')
-                    echo "Checking branch name..."
-                    echo "Current branch: ${branchName}"
-                }
+                echo "Starting build validation for PR against branch: ${env.BRANCH_NAME}"
+                // Use the built-in 'npm' tool to install SFDX CLI
+                npm install sfdx-cli --global
             }
         }
-        
-        stage('Install Salesforce CLI') {
-            steps {
-                sh 'npm install sfdx-cli -g'
-            }
-        }
-        
+
         stage('Authorize Salesforce Org') {
             steps {
                 withCredentials([file(credentialsId: 'SF_SERVER_KEY', variable: 'server_key_file')]) {
                     sh '''
-                        sfdx force:auth:jwt:grant \\
+                        sfdx auth:jwt:grant \\
                           --clientid ''' + SF_CONSUMER_KEY + ''' \\
                           --jwtkeyfile ''' + server_key_file + ''' \\
                           --username ''' + SF_USERNAME + ''' \\
-                          --instanceurl ''' + SF_INSTANCE_URL + '''
+                          --instanceurl ''' + SF_INSTANCE_URL + ''' \\
+                          --setalias validation_org
                     '''
                 }
             }
         }
-        
-        stage('Run PMD Analysis') {
+
+        stage('Static Code Analysis (PMD)') {
             steps {
                 tool 'JDK 11'
                 sh '''
+                    # Download PMD and unzip to a consistent location
                     curl -L -o pmd.zip https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
                     unzip -o -q pmd.zip
                 '''
                 sh '''
-                    mkdir -p pmd-reports
+                    # Run analysis, fail the build on any issues
                     ./pmd-bin-6.55.0/bin/run.sh pmd \\
-                      -d force-app/main/default/classes \\
+                      -d force-app \\
                       -R apex-ruleset.xml \\
                       -f html \\
-                      -r pmd-reports/pmd-report.html
+                      -r pmd-reports/pmd-report.html || true
                 '''
-                // This step will make the build fail if PMD finds issues.
-                sh 'test -s pmd-reports/pmd-report.html'
+                // Check if the report is not empty; if it's not, fail the build.
+                sh 'test ! -s pmd-reports/pmd-report.html'
                 archiveArtifacts artifacts: 'pmd-reports/**'
             }
         }
-        
+
         stage('Validate Metadata') {
             steps {
-                echo 'Performing a validation-only deployment to ensure changes can be deployed.'
+                echo 'Performing a validation-only deployment and running Apex tests.'
                 sh 'sfdx force:source:convert --rootdir force-app --outputdir deploy-package'
                 sh '''
                     sfdx force:mdapi:deploy \\
-                      -u ''' + SF_USERNAME + ''' \\
                       --checkonly \\
-                      -d ./deploy-package \\
+                      --deploydir ./deploy-package \\
                       --testlevel RunLocalTests \\
-                      -w 10
+                      --wait 10 \\
+                      --json
                 '''
             }
         }
     }
-    
+
     post {
         always {
             echo 'Pipeline finished.'
         }
         failure {
-            echo 'Build validation failed. Check logs for details.'
-            // Add email notification logic here
+            echo 'Build validation failed. Check the Jenkins logs for details.'
+            // Example of a mail notification on failure
+            // mail(to: 'dev.team@example.com', subject: 'Jenkins Build Failed', body: "The build for your PR has failed. Please check the logs at ${env.BUILD_URL}")
         }
         success {
             echo 'Build validation successful. Merging into the main branch is now safe.'
