@@ -66,7 +66,8 @@ pipeline {
                       --deploydir ./deploy-package \\
                       --testlevel RunLocalTests \\
                       --wait 10 \\
-                      --json
+                      --json \\
+                      --targetusername validation_org
                 '''
             }
         }
