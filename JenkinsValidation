@@ -81,7 +81,7 @@ pipeline {
             echo 'Build validation failed. Check the Jenkins logs for details.'
         }
         success {
-            echo 'Build validation successful. Merging into the main branch is now safe.'
+            echo 'Build validation successful. Merging into the main branch is now safes.'
         }
     }
 }
