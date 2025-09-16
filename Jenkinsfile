@@ -92,5 +92,9 @@ pipeline {
         always {
             echo 'Pipeline finished.'
         }
+        failure {
+            // This block runs only if the build failed.
+            mail bcc: '', body: "Build ${currentBuild.fullDisplayName} failed. Check the logs at ${env.BUILD_URL}", cc: '', from: '', subject: "Jenkins Build Failed: ${currentBuild.fullDisplayName}", to: 'k.goyal@salesforce.com'
+        }
     }
 }
