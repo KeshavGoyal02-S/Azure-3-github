@@ -2,7 +2,13 @@ Project Name: Jenkins with GitHub for SFDX
 **1. Branching Strategy and Branch Protection**
 Our repository uses a structured branching model to maintain a stable and controlled release process.
 
-main: This branch represents our production-ready code. Direct commits are strictly prohibited. All changes must be merged via a pull request.
+
+# Salesforce DX Project: Next Steps hgwefd hgvhgvg
+hfgty
+hgtfdew
+hgft
+Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+
 
 develop: This is our main integration branch. All new feature development starts here, and all completed features are merged here.
 
@@ -16,8 +22,19 @@ Status Checks Required: The Jenkins pipeline must successfully pass all checks b
 
 Require Reviewers: A designated number of reviewers must approve the pull request.
 
-**2. PR Validation with Jenkins**
-This project is configured with a Jenkins pipeline that automatically validates every pull request (PR) to prevent breaking changes from being merged.
+
+Thanks kiki news 
+Keshav
+Trigger hgvjhgv
+develop to main new 1
+new 1 more 
+new changes
+Trihgger check 2
+Trihgger check 3
+new chjheg 
+erfgergfre
+Make some new changes
+
 
 Trigger: The Jenkins pipeline is triggered automatically on every PR creation and update (via the GitHub Pull Request Builder plugin).
 
