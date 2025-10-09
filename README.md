@@ -5,7 +5,7 @@ Our repository uses a structured branching model to maintain a stable and contro
 
 # Salesforce DX Project: Next Steps hgwefd hgvhgvg
 hfgty
-hgtfdew new
+hgtfdew new hgf
 hgft
 Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
 
